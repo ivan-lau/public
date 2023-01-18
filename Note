@@ -1,0 +1,20 @@
+GUI
+- Calendar
+    - FullCalendar
+    - tui.calendar
+- News
+    - tui-editor
+- Dashboard
+- excelize
+
+https://stackoverflow.com/questions/4644027/how-to-automatically-reload-a-page-after-a-given-period-of-inactivity
+
+https://jquery.com/download/
+
+https://www.w3schools.com/jquery/tryit.asp?filename=tryjquery_event_bind_ref
+
+https://github.com/strangest-quark/stackbox-tutorials/tree/master/flask-kafka
+
+https://github.com/roniemartinez/real-time-charts-with-flask/blob/master/application.py
+
+https://www.statworx.com/en/content-hub/blog/how-to-build-a-dashboard-in-python-plotly-dash-step-by-step-tutorial/
