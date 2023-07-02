@@ -418,3 +418,189 @@ BENCHMARK(BM_LongSingleArg2Message);
 
 
 BENCHMARK_MAIN();
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+
+#include <benchmark/benchmark.h> 
+#include <iostream>
+#include <memory>
+#include <string_view>
+
+class ExternalAPI
+{
+public:
+    virtual void on_created(int) = 0;
+    virtual void on_start() = 0;
+};
+
+template<class T> struct IStrategy1
+{
+    void onChangeCallback(std::string_view instrumentId)
+    {
+        static_cast<T*>(this)->onChange (instrumentId) ;
+    }
+};
+
+class Strategy1 : public IStrategy1<Strategy1>
+{
+public:
+    void onChange(std::string_view instrumentId)
+    {
+        // std::cout << "Strategy2::onChange " << instrumentId << std::endl;
+    }
+};
+
+class Instance1: public ExternalAPI
+{
+public:
+    void on_created(int) override {
+        strategy = std::make_unique<Strategy1>();
+    }
+
+    void on_start() override {
+        std::string instrumentId = "instrumentId";
+        strategy->onChangeCallback(instrumentId);
+    }
+
+private:
+    std::unique_ptr<Strategy1> strategy;
+};
+
+struct IStrategy2
+{
+    virtual void onChange(std::string instrumentId) = 0;
+};
+
+class Strategy2 : public IStrategy2
+{
+public:
+    void onChange(std::string instrumentId) override
+    {
+        // std::cout << "Strategy1::onChange " << instrumentId << std::endl;
+    }
+};
+
+class Instance2: public ExternalAPI
+{
+public:
+    void on_created(int) override {
+        strategy = std::make_unique<Strategy2>();
+    }
+
+    void on_start() override {
+        std::string instrumentId = "instrumentId";
+        strategy->onChange(instrumentId);
+    }
+
+private:
+    std::unique_ptr<Strategy2> strategy;
+};
+
+
+
+// int main()
+// {
+//     Instance1 instance1;
+//     instance1.on_created(0);
+//     instance1.on_start();
+//     Instance2 instance2;
+//     instance2.on_created(0);
+//     instance2.on_start();
+//     return 0;
+// }
+
+
+
+static void BM_CRTP(benchmark::State& state) {
+    Instance1 instance;
+    instance.on_created(0);
+
+    for (auto _ : state) {
+        instance.on_start();
+    }
+}
+
+BENCHMARK(BM_CRTP);
+
+static void BM_DynamicPolymorphism(benchmark::State& state) {
+    Instance2 instance;
+    instance.on_created(0);
+
+    for (auto _ : state) {
+        instance.on_start();
+    }
+}
+
+BENCHMARK(BM_DynamicPolymorphism);
+
+static void BM_CRTP_MultipleInstances(benchmark::State& state) {
+    std::vector<Instance1> instances(state.range(0));
+    for (auto& instance : instances) {
+        instance.on_created(0);
+    }
+
+    for (auto _ : state) {
+        for (auto& instance : instances) {
+            instance.on_start();
+        }
+    }
+
+    state.SetItemsProcessed(state.iterations() * state.range(0));
+}
+
+BENCHMARK(BM_CRTP_MultipleInstances)->Range(8, 512);
+
+static void BM_DynamicPolymorphism_MultipleInstances(benchmark::State& state) {
+    std::vector<Instance2> instances(state.range(0));
+    for (auto& instance : instances) {
+        instance.on_created(0);
+    }
+
+    for (auto _ : state) {
+        for (auto& instance : instances) {
+            instance.on_start();
+        }
+    }
+
+    state.SetItemsProcessed(state.iterations() * state.range(0));
+}
+
+BENCHMARK(BM_DynamicPolymorphism_MultipleInstances)->Range(8, 512);
+
+static void BM_CRTP_Polymorphic(benchmark::State& state) {
+    std::vector<std::unique_ptr<IStrategy1<Strategy1>>> strategies(state.range(0));
+    for (auto& strategy : strategies) {
+        strategy = std::make_unique<Strategy1>();
+    }
+
+    for (auto _ : state) {
+        for (auto& strategy : strategies) {
+            strategy->onChangeCallback("instrumentId");
+        }
+    }
+
+    state.SetItemsProcessed(state.iterations() * state.range(0));
+}
+
+BENCHMARK(BM_CRTP_Polymorphic)->Range(8, 512);
+
+static void BM_DynamicPolymorphism_Polymorphic(benchmark::State& state) {
+    std::vector<std::unique_ptr<Strategy2>> strategies(state.range(0));
+    for (auto& strategy : strategies) {
+        strategy = std::make_unique<Strategy2>();
+    }
+
+    for (auto _ : state) {
+        for (auto& strategy : strategies) {
+            strategy->onChange("instrumentId");
+        }
+    }
+
+    state.SetItemsProcessed(state.iterations() * state.range(0));
+}
+
+BENCHMARK(BM_DynamicPolymorphism_Polymorphic)->Range(8, 512);
+
+BENCHMARK_MAIN();
