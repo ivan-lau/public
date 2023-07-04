@@ -155,3 +155,34 @@ int main() {
 
     return 0;
 }
+
+//If you want to avoid the virtual function call and resolve the function call at compile-time, you can use a template argument instead of a virtual function. Here's an example implementation:
+
+
+template <typename T, void (T::*callback)()>
+struct StreamWrapper {
+    StreamWrapper(T& obj) : m_obj(obj) {}
+
+    void onCallback() {
+        (m_obj.*callback)();
+    }
+
+    T& m_obj;
+};
+
+struct MyClass {
+    void callback() {
+        // handle callback ...
+        std::cout << "Received callback from stream wrapper\n";
+    }
+
+    MyClass() : m_streamWrapper(*this) {}
+
+    StreamWrapper<MyClass, &MyClass::callback> m_streamWrapper;
+};
+/*
+In this implementation, the StreamWrapper class takes two template parameters: a class type T and a pointer to a member function of T that takes no arguments and returns void. The StreamWrapper constructor takes a reference to a T object, and the onCallback function calls the member function pointed to by the callback template parameter on the T object.
+
+The MyClass class now defines a callback member function that matches the signature of the callback template parameter in StreamWrapper. Its constructor initializes a StreamWrapper object that subscribes to the MyClass object by passing a pointer to the callback member function as the callback template parameter.
+*/
+With this implementation, the function call in the StreamWrapper class is resolved at compile-time using the template parameter, avoiding the virtual function call and the overhead associated with it.
