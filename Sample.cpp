@@ -104,3 +104,54 @@ int main() {
 
 //     return 0;
 // }
+
+
+#include <iostream>
+
+struct Data {};
+
+struct ExternalStream {
+    virtual void onCallback() = 0;
+};
+
+struct MyExternalStream : public ExternalStream {
+    void onCallback() override {
+        // simulate callback
+        std::cout << "Received callback from external stream\n";
+    }
+};
+
+template <typename Derived>
+struct StreamWrapper {
+    struct IHandler {
+        void callback() {
+            static_cast<Derived*>(this)->callback();
+        }
+    };
+
+    StreamWrapper(IHandler& handler) : m_handler(handler) {}
+
+    void onCallback() {
+        m_handler.callback();
+    }
+
+    IHandler& m_handler;
+};
+
+struct MyClass : public StreamWrapper<MyClass>::IHandler {
+    void callback() {
+        // handle callback ...
+        std::cout << "Received callback from stream wrapper\n";
+    }
+
+    MyClass() : m_streamWrapper(*this) {}
+
+    StreamWrapper<MyClass> m_streamWrapper;
+};
+
+int main() {
+    MyClass myObj;
+    myObj.m_streamWrapper.onCallback(); // simulate a callback
+
+    return 0;
+}
