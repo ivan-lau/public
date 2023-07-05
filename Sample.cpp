@@ -1,36 +1,57 @@
-
-/*
-Here's an example C++17 code that uses the Boost library to generate UUIDs for each object of the Car class:
-
-*/
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <iostream>
 
-class Car {
+class CarID {
 public:
-    Car() : id(boost::uuids::random_generator()()) {}
+    CarID() : id(boost::uuids::random_generator()()) {}
 
-    boost::uuids::uuid getId() const {
-        return id;
+    std::string toString() const {
+        return boost::uuids::to_string(id);
+    }
+
+    bool operator==(const CarID& other) const {
+        return id == other.id;
+    }
+
+    bool operator!=(const CarID& other) const {
+        return !(*this == other);
     }
 
 private:
     boost::uuids::uuid id;
 };
 
+std::ostream& operator<<(std::ostream& os, const CarID& carID) {
+    os << boost::uuids::to_string(carID.id);
+    return os;
+}
+
+class Car {
+public:
+    Car() : id(CarID()) {}
+
+    CarID getId() const {
+        return id;
+    }
+
+private:
+    CarID id;
+};
+
 int main() {
     Car car1;
     Car car2;
 
-    std::cout << "Car 1 ID: " << boost::uuids::to_string(car1.getId()) << std::endl;
-    std::cout << "Car 2 ID: " << boost::uuids::to_string(car2.getId()) << std::endl;
+    std::cout << "Car 1 ID: " << car1.getId() << std::endl;
+    std::cout << "Car 2 ID: " << car2.getId() << std::endl;
+
+    if (car1.getId() == car2.getId()) {
+        std::cout << "Car 1 and Car 2 have the same ID" << std::endl;
+    } else {
+        std::cout << "Car 1 and Car 2 have different IDs" << std::endl;
+    }
 
     return 0;
 }
-
-/*
-In this code, the `Car` class has a constructor that generates a random UUID using the `boost::uuids::random_generator()` function. The `getId()` function returns the UUID of the car object.
-
-To use this class, you can create new instances of it and retrieve their UUIDs using the `getId()` function. The `boost::uuids::to_string()` function is used to convert the UUID to a string for printing.
-*/
