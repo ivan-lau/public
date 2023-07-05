@@ -1,3 +1,4 @@
+
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -5,10 +6,10 @@
 
 class CarID {
 public:
-    CarID() : id(boost::uuids::random_generator()()) {}
+    CarID() : id(boost::uuids::random_generator()()), id_string(boost::uuids::to_string(id)) {}
 
-    std::string toString() const {
-        return boost::uuids::to_string(id);
+    const std::string& toString() const {
+        return id_string;
     }
 
     bool operator==(const CarID& other) const {
@@ -21,10 +22,11 @@ public:
 
 private:
     boost::uuids::uuid id;
+    std::string id_string;
 };
 
 std::ostream& operator<<(std::ostream& os, const CarID& carID) {
-    os << boost::uuids::to_string(carID.id);
+    os << carID.toString();
     return os;
 }
 
@@ -32,7 +34,7 @@ class Car {
 public:
     Car() : id(CarID()) {}
 
-    CarID getId() const {
+    const CarID& getId() const {
         return id;
     }
 
