@@ -150,3 +150,58 @@ g++ main.cpp -L. -lcar -o main
 This will produce an executable `main` that uses the `Car` class from the static library `libcar.a`.
 
 Note that we use the `CarIDImpl` and `CarImpl` classes to hide the implementation details of the `Car` and `CarID` classes, respectively, from the header file `car.h`. This allows users of the `Car` class to create `Car` objects and get their `CarID` objects without knowing the details of how the `CarID` objects are generated or stored.
+
+
+You're correct, `main.cpp` should not be included in the CMake file for building the static library. 
+
+In the updated implementation I provided earlier, I included `main.cpp` in the same directory as `car.cpp` and `car.h`, and assumed that the user would build an executable from `main.cpp` that uses the `Car` static library. 
+
+However, it is better practice to separate the code for the library and the code for the executable, and to include only the `car.cpp` and `car.h` files in the CMake file for building the static library. 
+
+Here's an updated version of the `CMakeLists.txt` file that only includes the `car.cpp` and `car.h` files for building the static library:
+
+```
+cmake_minimum_required(VERSION 3.0)
+
+project(CarLibrary)
+
+set(CMAKE_CXX_STANDARD 11)
+
+# Add the header-only library Boost
+find_package(Boost REQUIRED COMPONENTS uuid)
+
+# Create a static library for the Car and CarID classes
+add_library(CarLibrary STATIC car.cpp)
+
+# Link the Boost UUID library to the Car library
+target_link_libraries(CarLibrary PRIVATE Boost::uuid)
+```
+
+This `CMakeLists.txt` file sets the minimum required version of CMake, defines the project name, and sets the C++ standard to C++11.
+
+It then finds the Boost package and its UUID component that we use in the implementation of `CarID`, creates a static library `CarLibrary` from the `car.cpp` source file, and links the Boost UUID library to the `CarLibrary` library.
+
+To build an executable that uses the `CarLibrary` library, you would create a separate CMake file in a separate directory (e.g., `app/CMakeLists.txt`), and include the `car.h` header file and link against the `CarLibrary` library:
+
+```
+cmake_minimum_required(VERSION 3.0)
+
+project(CarApp)
+
+set(CMAKE_CXX_STANDARD 11)
+
+# Find the CarLibrary package
+find_package(CarLibrary REQUIRED)
+
+# Create an executable for the main program
+add_executable(main main.cpp)
+
+# Link the CarLibrary library to the main program
+target_link_libraries(main PRIVATE CarLibrary)
+```
+
+This `CMakeLists.txt` file sets the minimum required version of CMake, defines the project name, and sets the C++ standard to C++11.
+
+It then finds the `CarLibrary` package (which consists of the `car.h` header file and the `CarLibrary` static library), creates an executable `main` from the `main.cpp` source file, and links the `CarLibrary` library to the executable.
+
+This separation of code into separate directories and CMake files makes it easier to manage dependencies, build configurations, and build processes for more complex projects.
