@@ -96,3 +96,98 @@ g++ -std=c++11 main.cpp -o game && ./game
 ```
 
 This should compile the code and output "Running game..." followed by "Hello World!" to the console.
+
+Certainly! Here's an example of how you could modify your example to use a similar technique:
+
+```cpp
+// TestInterface.h
+class TestInterface {
+public:
+    virtual void runTest() = 0;
+    virtual ~TestInterface() {}
+};
+
+// TestRegistry.h
+#include <memory>
+#include <vector>
+#include "TestInterface.h"
+
+class TestRegistry {
+public:
+    void registerTest(std::unique_ptr<TestInterface> test);
+    void runTests();
+
+private:
+    std::vector<std::unique_ptr<TestInterface>> m_tests;
+};
+
+// TestRegistry.cpp
+#include "TestRegistry.h"
+
+void TestRegistry::registerTest(std::unique_ptr<TestInterface> test) {
+    m_tests.push_back(std::move(test));
+}
+
+void TestRegistry::runTests() {
+    for (const auto& test : m_tests) {
+        test->runTest();
+    }
+}
+
+// ExampleTest.h
+#include "TestInterface.h"
+
+class ExampleTest : public TestInterface {
+public:
+    void runTest() override;
+};
+
+// ExampleTest.cpp
+#include <iostream>
+#include "ExampleTest.h"
+
+void ExampleTest::runTest() {
+    std::cout << "Running example test\n";
+}
+
+// main.cpp
+#include "TestRegistry.h"
+
+static TestRegistry g_testRegistry;
+
+template<class T>
+struct TestRegistrar {
+    TestRegistrar() {
+        g_testRegistry.registerTest(std::make_unique<T>());
+    }
+};
+
+#define REGISTER_TEST(TestClass) static TestRegistrar<TestClass> g_testRegistrar##TestClass;
+
+class AnotherTest : public TestInterface {
+public:
+    void runTest() override;
+};
+
+void AnotherTest::runTest() {
+    std::cout << "Running another test\n";
+}
+
+REGISTER_TEST(ExampleTest)
+REGISTER_TEST(AnotherTest)
+
+int main() {
+    g_testRegistry.runTests();
+    return 0;
+}
+```
+
+In this example, the `TestRegistry` class is responsible for maintaining a list of registered test cases and executing them. The `registerTest` function adds a new test case to the list, and the `runTests` function executes each test case in the list.
+
+The `ExampleTest` class is a concrete implementation of the `TestInterface` interface. It defines a simple test case that prints a message to the console.
+
+The `TestRegistrar` class template is used to register each test case with the `TestRegistry`. The `REGISTER_TEST` macro is used to define a static instance of `TestRegistrar<TestClass>` for each test case class, which calls `g_testRegistry.registerTest` to add the test case to the list.
+
+In `main.cpp`, the `g_testRegistry` object is created and each test case is registered using the `REGISTER_TEST` macro. The `g_testRegistry.runTests()` function is then called to execute all registered test cases.
+
+Again, note that this is a simple example and does not include error handling or other features you would typically want in a real-world testing framework. However, it demonstrates how you can use a similar technique to the one used by `ENGINE_GAME` to register test cases without needing to include additional header files for each test case.
