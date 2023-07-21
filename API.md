@@ -97,6 +97,8 @@ g++ -std=c++11 main.cpp -o game && ./game
 
 This should compile the code and output "Running game..." followed by "Hello World!" to the console.
 
+---
+
 Certainly! Here's an example of how you could modify your example to use a similar technique:
 
 ```cpp
