@@ -217,3 +217,40 @@ Instead of hardcoding the project name as "MyProject", we're using the `${PROJEC
 ```
 
 This will include the generated header file that includes the header file with the same name as your project, and any other contents you added in the `file(APPEND ...)` command.
+
+---
+
+Yes, you can search for a header file that contains a specific macro, such as `CLASS_NAME`, and then include that header file in `auto_gen.h` using CMake.
+
+Here's an example of how you can do it:
+
+1. In your `CMakeLists.txt` file, add the following lines:
+
+```
+set(AUTO_GEN_FILE ${CMAKE_CURRENT_BINARY_DIR}/auto_gen.h)
+file(WRITE ${AUTO_GEN_FILE} "// automatically generated file\n")
+
+# search for a header file that contains the CLASS_NAME macro
+file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+foreach(header ${HEADER_FILES})
+    file(READ ${header} header_contents)
+    if(header_contents MATCHES ".*#define[ \t]+CLASS_NAME.*")
+        file(APPEND ${AUTO_GEN_FILE} "#include \"${header}\"\n")
+    endif()
+endforeach()
+
+file(APPEND ${AUTO_GEN_FILE} "// other contents of auto_gen.h go here\n")
+```
+
+The `file(GLOB_RECURSE ...)` command searches for all header files in the current source directory and its subdirectories. The `foreach()` loop goes through each header file, reads its contents using `file(READ ...)`, and checks if it contains the `CLASS_NAME` macro using a regular expression. If the macro is found, the `file(APPEND ...)` command appends an `#include` directive for that header file to `auto_gen.h`.
+
+2. In your source files, you can include the generated header file using:
+
+```
+#include "auto_gen.h"
+```
+
+This will include the generated header file that includes the header file with the `CLASS_NAME` macro, and any other contents you added in the `file(APPEND ...)` command.
+
+Note that this approach assumes that the `CLASS_NAME` macro is defined using `#define` in the header file. If the macro is defined using a different method, you may need to adjust the regular expression used in the `if()` statement.
+
