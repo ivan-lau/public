@@ -196,4 +196,24 @@ Again, note that this is a simple example and does not include error handling or
 
 ---
 
-The key challenge here is to ensure that the AlgoTrading strategy is automatically registered without being explicitly referenced in other files. This can be achieved using a Factory pattern where we register the strategy during its static initialization, and making sure that AlgoTrading.hpp is included in the application somewhere.
+I see, in that case, you can use the `PROJECT_NAME` variable provided by CMake to get the name of your project and use it to generate the `auto_gen.h` file.
+
+Here's an updated example:
+
+1. In your `CMakeLists.txt` file, add the following lines:
+
+```
+set(AUTO_GEN_FILE ${CMAKE_CURRENT_BINARY_DIR}/auto_gen.h)
+file(WRITE ${AUTO_GEN_FILE} "#include \"${PROJECT_NAME}.h\"\n")
+file(APPEND ${AUTO_GEN_FILE} "// other contents of auto_gen.h go here\n")
+```
+
+Instead of hardcoding the project name as "MyProject", we're using the `${PROJECT_NAME}` variable to get the name of your project.
+
+2. In your source files, you can include the generated header file using:
+
+```
+#include "auto_gen.h"
+```
+
+This will include the generated header file that includes the header file with the same name as your project, and any other contents you added in the `file(APPEND ...)` command.
