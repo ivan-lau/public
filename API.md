@@ -1,3 +1,5 @@
+https://stackoverflow.com/questions/456042/how-do-i-perform-a-nonblocking-read-using-asio
+
 table EventOne
 {
 id:uint;
