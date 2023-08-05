@@ -1,104 +1,16 @@
-https://stackoverflow.com/questions/456042/how-do-i-perform-a-nonblocking-read-using-asio
+To avoid the sharing of static variables across multiple instances of a shared library, you can employ techniques such as:
 
-table EventOne
-{
-id:uint;
-timestamp:ulong;
-adress:string;
-}
+1. **Avoid or minimize the use of static variables**: If possible, consider using alternative approaches that do not rely heavily on static variables. Instead, design your library to accept inputs and return outputs explicitly through function parameters or data structures.
 
-table EventTwo
-{
-id:uint;
-timestamp:ulong;
-strength:float;
-}
+2. **Use thread-local storage**: If you want each instance of the shared library to have its own separate copy of a variable, you can use thread-local storage (TLS). Thread-local storage allows each thread or instance to have its own unique instance of a variable. C++11 introduced the `thread_local` keyword for defining thread-local variables. However, note that this approach is specific to individual threads and may not work as expected if multiple threads within the same instance of the library need access to independent copies of the variable.
 
-union Events {EventOne, EventTwo}
+3. **Dynamic allocation**: Instead of using static variables, you can dynamically allocate memory for the data that needs to be separate for each instance of the library. This way, each instance can have its own memory region to store and manipulate the data. However, keep in mind that dynamic allocation introduces additional responsibilities for memory management, such as proper deallocation when no longer needed.
 
-table EventHolder
-{
-theEvent:Events;
-}
+4. **Isolate or encapsulate state**: If you need to have shared state across instances but also want to avoid interference between instances, you can encapsulate the shared data within a separate object or data structure. Each instance of the library can then work with its own instance of that object, ensuring isolation and preventing interference.
 
-root_type EventHolder;
+5. **Use separate processes**: If the requirement for separate static variable instances is critical and cannot be achieved within a shared library, you may consider using separate processes instead. Each process would load its own instance of the shared library, providing complete isolation between them.
 
-```
-#include "myevents_generated.h"
+It's important to carefully consider the design and requirements of your specific application to determine the most suitable approach for avoiding the sharing of static variables across instances of a shared library.
 
-using namespace MyEvents;
+---
 
-int main() {
-  flatbuffers::FlatBufferBuilder builder;
-
-  // Create an EventOne object.
-  auto event_one_offset = CreateEventOne(builder, 1, 1234567890, builder.CreateString("123 Main St"));
-
-  // Create an EventTwo object.
-  auto event_two_offset = CreateEventTwo(builder, 2, 1234567891, 1.23f);
-
-  // Create an Events union object that holds an EventOne object.
-  auto events_offset = CreateEvents(builder, EventsUnion::EventsUnion_EventOne, event_one_offset.Union());
-
-  // Create an EventHolder object that holds the Events union object.
-  auto event_holder_offset = CreateEventHolder(builder, events_offset.Union());
-
-  // Serialize the EventHolder object to a buffer.
-  builder.Finish(event_holder_offset);
-
-  // Deserialize the buffer back into an EventHolder object.
-  auto event_holder_ptr = GetEventHolder(builder.GetBufferPointer());
-
-  // Access the EventOne or EventTwo object stored in the Events union object.
-  if (event_holder_ptr->theEvent_type() == EventsUnion::EventsUnion_EventOne) {
-    auto event_one_ptr = static_cast<const EventOne*>(event_holder_ptr->theEvent());
-    std::cout << "EventOne id: " << event_one_ptr->id() << std::endl;
-    std::cout << "EventOne timestamp: " << event_one_ptr->timestamp() << std::endl;
-    std::cout << "EventOne address: " << event_one_ptr->adress()->str() << std::endl;
-  } else if (event_holder_ptr->theEvent_type() == EventsUnion::EventsUnion_EventTwo) {
-    auto event_two_ptr = static_cast<const EventTwo*>(event_holder_ptr->theEvent());
-    std::cout << "EventTwo id: " << event_two_ptr->id() << std::endl;
-    std::cout << "EventTwo timestamp: " << event_two_ptr->timestamp() << std::endl;
-    std::cout << "EventTwo strength: " << event_two_ptr->strength() << std::endl;
-  }
-
-  return 0;
-}
-```
-
-Can I only send one event instead of 2 ?
-
-```
-#include "myevents_generated.h"
-
-using namespace MyEvents;
-
-int main() {
-  flatbuffers::FlatBufferBuilder builder;
-
-  // Create an EventOne object.
-  auto event_one_offset = CreateEventOne(builder, 1, 1234567890, builder.CreateString("123 Main St"));
-
-  // Create an Events union object that holds the EventOne object.
-  auto events_offset = CreateEvents(builder, EventsUnion::EventsUnion_EventOne, event_one_offset.Union());
-
-  // Create an EventHolder object that holds the Events union object.
-  auto event_holder_offset = CreateEventHolder(builder, events_offset.Union());
-
-  // Serialize the EventHolder object to a buffer.
-  builder.Finish(event_holder_offset);
-
-  // Deserialize the buffer back into an EventHolder object.
-  auto event_holder_ptr = GetEventHolder(builder.GetBufferPointer());
-
-  // Access the EventOne object stored in the Events union object.
-  if (event_holder_ptr->theEvent_type() == EventsUnion::EventsUnion_EventOne) {
-    auto event_one_ptr = static_cast<const EventOne*>(event_holder_ptr->theEvent());
-    std::cout << "EventOne id: " << event_one_ptr->id() << std::endl;
-    std::cout << "EventOne timestamp: " << event_one_ptr->timestamp() << std::endl;
-    std::cout << "EventOne address: " << event_one_ptr->adress()->str() << std::endl;
-  }
-
-  return 0;
-}
-```
