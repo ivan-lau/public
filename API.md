@@ -14,3 +14,87 @@ It's important to carefully consider the design and requirements of your specifi
 
 ---
 
+To allow the client to receive two kinds of data concurrently from the server, you can use asynchronous read operations in Boost.Asio. Here's an example that demonstrates how to receive two kinds of FlatBuffers data concurrently:
+
+```cpp
+#include <boost/asio.hpp>
+#include "your_generated_schema1.h" // Include the generated header files for each schema
+#include "your_generated_schema2.h"
+
+class Client {
+public:
+    Client(boost::asio::io_context& ioContext, const std::string& serverIP, unsigned short serverPort)
+        : socket_(ioContext)
+    {
+        boost::asio::ip::tcp::resolver resolver(ioContext);
+        boost::asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(serverIP, std::to_string(serverPort));
+        boost::asio::connect(socket_, endpoints);
+
+        startReceiving();
+    }
+
+private:
+    void startReceiving() {
+        // Start receiving schema1 data
+        receiveSchema1Data();
+
+        // Start receiving schema2 data
+        receiveSchema2Data();
+    }
+
+    void receiveSchema1Data() {
+        // Create a buffer to hold the received data
+        std::vector<uint8_t> buffer1(1024); // Adjust the buffer size as needed
+
+        socket_.async_read_some(boost::asio::buffer(buffer1), [this, buffer1](const boost::system::error_code& error, std::size_t bytesRead) {
+            if (!error) {
+                // Process the received schema1 data
+                flatbuffers::Verifier verifier(buffer1.data(), bytesRead);
+                if (your_schema1_namespace::VerifyYourSchema1DataBuffer(verifier)) {
+                    auto data1 = your_schema1_namespace::GetYourSchema1Data(buffer1.data());
+                    // Process the data1 object
+                }
+            }
+
+            // Continue receiving schema1 data
+            receiveSchema1Data();
+        });
+    }
+
+    void receiveSchema2Data() {
+        // Create a buffer to hold the received data
+        std::vector<uint8_t> buffer2(1024); // Adjust the buffer size as needed
+
+        socket_.async_read_some(boost::asio::buffer(buffer2), [this, buffer2](const boost::system::error_code& error, std::size_t bytesRead) {
+            if (!error) {
+                // Process the received schema2 data
+                flatbuffers::Verifier verifier(buffer2.data(), bytesRead);
+                if (your_schema2_namespace::VerifyYourSchema2DataBuffer(verifier)) {
+                    auto data2 = your_schema2_namespace::GetYourSchema2Data(buffer2.data());
+                    // Process the data2 object
+                }
+            }
+
+            // Continue receiving schema2 data
+            receiveSchema2Data();
+        });
+    }
+
+    boost::asio::ip::tcp::socket socket_;
+};
+
+int main() {
+    boost::asio::io_context ioContext;
+    Client client(ioContext, "127.0.0.1", 1234); // Specify the server IP and port
+    ioContext.run();
+
+    return 0;
+}
+```
+
+In this example, the client uses two separate asynchronous read operations to receive data of schema1 and schema2 concurrently. Each read operation is associated with its own buffer, and when data is received, it is processed accordingly based on its schema.
+
+Note that you'll need to adjust the buffer sizes and the processing logic according to your specific requirements. Additionally, you may want to implement error handling, handle multiple connections, and structure your code in a more organized manner.
+
+---
+
