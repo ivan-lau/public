@@ -1,30 +1,30 @@
+#include <execinfo.h>
 #include <iostream>
-#include <termios.h>
-#include <unistd.h>
 
-void enableNonCanonicalMode()
-{
-    termios term;
-    tcgetattr(STDIN_FILENO, &term);
-    term.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
+void printCallerFunctionName() {
+    void* callStack[2];  // Adjust the size as needed
+    int stackSize = backtrace(callStack, 2);  // Adjust the parameter as needed
+
+    if (stackSize >= 2) {
+        // Obtain the symbol name of the previous caller function
+        char** symbols = backtrace_symbols(callStack + 1, 1);  // Adjust the index and count as needed
+
+        if (symbols != nullptr) {
+            std::cout << "Previous caller function: " << symbols[0] << std::endl;
+            std::free(symbols);
+        } else {
+            std::cout << "Failed to obtain caller function name." << std::endl;
+        }
+    } else {
+        std::cout << "No caller function information available." << std::endl;
+    }
 }
 
-int main()
-{
-    enableNonCanonicalMode();
+void foo() {
+    printCallerFunctionName();
+}
 
-    char c;
-    while (std::cin.get(c))
-    {
-        std::cout << "Input: " << c << std::endl;
-    }
-
-    // Restore the terminal settings before exiting
-    termios term;
-    tcgetattr(STDIN_FILENO, &term);
-    term.c_lflag |= (ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
-
+int main() {
+    foo();
     return 0;
 }
