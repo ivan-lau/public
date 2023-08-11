@@ -1,3 +1,9 @@
+double round_to(double value, double precision = 1.0)
+{
+    double i = 1.0 / precision;
+    return std::round(value * i) * precision;
+}
+
 To avoid the sharing of static variables across multiple instances of a shared library, you can employ techniques such as:
 
 1. **Avoid or minimize the use of static variables**: If possible, consider using alternative approaches that do not rely heavily on static variables. Instead, design your library to accept inputs and return outputs explicitly through function parameters or data structures.
