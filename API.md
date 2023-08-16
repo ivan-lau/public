@@ -85,6 +85,11 @@ private:
         return ++lastOrderId;
     }
 
+    template<typename T>
+    void removeOrderFromList(int orderId, T& orderList) {
+        orderList.remove(orderId);
+    }
+
     void matchOrders() {
         for (auto buyIt = buyOrders.rbegin(); buyIt != buyOrders.rend(); ++buyIt) {
             auto buyPrice = buyIt->first;
