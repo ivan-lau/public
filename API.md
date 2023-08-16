@@ -92,46 +92,47 @@ private:
 
     void matchOrders() {
         for (auto buyIt = buyOrders.rbegin(); buyIt != buyOrders.rend(); ++buyIt) {
-            auto buyPrice = buyIt->first;
-            auto& buyList = buyIt->second;
+            double buyPrice = buyIt->first;
+            std::list<int>& buyList = buyIt->second;
 
-            auto sellIt = sellOrders.lower_bound(buyPrice);
+            auto sellIt = sellOrders.begin();
             while (sellIt != sellOrders.end() && sellIt->first <= buyPrice) {
-                auto& sellList = sellIt->second;
+                double sellPrice = sellIt->first;
+                std::list<int>& sellList = sellIt->second;
 
-                for (auto buyOrderIt = buyList.begin(); buyOrderIt != buyList.end(); ) {
-                    for (auto sellOrderIt = sellList.begin(); sellOrderIt != sellList.end(); ) {
-                        if (buyOrderIt->quantity <= sellOrderIt->quantity) {
-                            matchOrder(*buyOrderIt, *sellOrderIt);
-                            sellOrderIt = sellList.erase(sellOrderIt);
+                auto buyOrderIt = buyList.begin();
+                while (buyOrderIt != buyList.end()) {
+                    auto sellOrderIt = sellList.begin();
+                    while (sellOrderIt != sellList.end()) {
+                        int buyOrderId = *buyOrderIt;
+                        int sellOrderId = *sellOrderIt;
 
-                            if (buyOrderIt->quantity == sellOrderIt->quantity) {
-                                buyOrderIt = buyList.erase(buyOrderIt);
-                                break;
-                            }
-                        } else {
-                            matchOrder(*buyOrderIt, *sellOrderIt);
-                            buyOrderIt->quantity -= sellOrderIt->quantity;
-                            sellOrderIt = sellList.erase(sellOrderIt);
+                        const Order& buyOrder = *orderIds[buyOrderId];
+                        const Order& sellOrder = *orderIds[sellOrderId];
+
+                        // Match the orders...
+                        matchOrder(buyOrder, sellOrder);
+
+                        // Remove the matched orders from the lists...
+                        buyOrderIt = buyList.erase(buyOrderIt);
+                        sellOrderIt = sellList.erase(sellOrderIt);
+
+                        // Break the loop if necessary conditions are satisfied
+                        if (/* your conditions for breaking the loop */) {
+                            break;
                         }
                     }
 
-                    if (sellList.empty() || buyOrderIt->quantity == 0) {
-                        break;
-                    } else {
+                    if (sellOrderIt == sellList.end()) {
                         ++buyOrderIt;
                     }
                 }
 
-                if (sellList.empty()) {
+                if (buyOrderIt == buyList.end()) {
                     sellIt = sellOrders.erase(sellIt);
                 } else {
                     ++sellIt;
                 }
-            }
-
-            if (buyList.empty()) {
-                buyIt = decltype(buyIt){};
             }
         }
     }
