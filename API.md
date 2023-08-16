@@ -137,13 +137,34 @@ private:
         }
     }
 
-    void matchOrder(const Order& buyOrder, const Order& sellOrder) {
+void matchOrder(const Order& buyOrder, const Order& sellOrder) {
+    int buyOrderId = -1;
+    int sellOrderId = -1;
+
+    // Find the buy order ID
+    for (const auto& entry : orderIds) {
+        if (entry.second == &buyOrder) {
+            buyOrderId = entry.first;
+            break;
+        }
+    }
+
+    // Find the sell order ID
+    for (const auto& entry : orderIds) {
+        if (entry.second == &sellOrder) {
+            sellOrderId = entry.first;
+            break;
+        }
+    }
+
+    if (buyOrderId != -1 && sellOrderId != -1) {
         std::cout << "Matched: "
-                  << "Buy Order ID=" << buyOrder.id << ", "
-                  << "Sell Order ID=" << sellOrder.id << ", "
+                  << "Buy Order ID=" << buyOrderId << ", "
+                  << "Sell Order ID=" << sellOrderId << ", "
                   << "Price=" << buyOrder.price << ", "
                   << "Quantity=" << std::min(buyOrder.quantity, sellOrder.quantity) << std::endl;
     }
+}
 };
 ```
 
