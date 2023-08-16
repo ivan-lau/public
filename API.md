@@ -1,8 +1,10 @@
+```
 double round_to(double value, double precision = 1.0)
 {
     double i = 1.0 / precision;
     return std::round(value * i) * precision;
 }
+```
 
 To avoid the sharing of static variables across multiple instances of a shared library, you can employ techniques such as:
 
@@ -17,6 +19,99 @@ To avoid the sharing of static variables across multiple instances of a shared l
 5. **Use separate processes**: If the requirement for separate static variable instances is critical and cannot be achieved within a shared library, you may consider using separate processes instead. Each process would load its own instance of the shared library, providing complete isolation between them.
 
 It's important to carefully consider the design and requirements of your specific application to determine the most suitable approach for avoiding the sharing of static variables across instances of a shared library.
+
+---
+
+```
+#include <iostream>
+#include <map>
+#include <vector>
+
+enum class Side {
+    Buy,
+    Sell
+};
+
+struct Order {
+    int id;
+    Side side;
+    double price;
+    int quantity;
+
+    Order(int id, Side side, double price, int quantity)
+        : id(id), side(side), price(price), quantity(quantity) {}
+};
+
+class MatchingEngine {
+public:
+    void insertOrder(const Order& order) {
+        if (order.side == Side::Buy) {
+            buyOrders[order.price].push_back(order);
+        } else {
+            sellOrders[order.price].push_back(order);
+        }
+        matchOrders();
+    }
+
+private:
+    std::map<double, std::vector<Order>> buyOrders;
+    std::map<double, std::vector<Order>> sellOrders;
+
+    void matchOrders() {
+        for (auto buyIt = buyOrders.rbegin(); buyIt != buyOrders.rend(); ++buyIt) {
+            auto buyPrice = buyIt->first;
+            auto& buyList = buyIt->second;
+
+            auto sellIt = sellOrders.lower_bound(buyPrice);
+            while (sellIt != sellOrders.end() && sellIt->first <= buyPrice) {
+                auto& sellList = sellIt->second;
+
+                for (auto buyOrderIt = buyList.begin(); buyOrderIt != buyList.end(); ) {
+                    for (auto sellOrderIt = sellList.begin(); sellOrderIt != sellList.end(); ) {
+                        if (buyOrderIt->quantity <= sellOrderIt->quantity) {
+                            matchOrder(*buyOrderIt, *sellOrderIt);
+                            sellOrderIt = sellList.erase(sellOrderIt);
+
+                            if (buyOrderIt->quantity == sellOrderIt->quantity) {
+                                buyOrderIt = buyList.erase(buyOrderIt);
+                                break;
+                            }
+                        } else {
+                            matchOrder(*buyOrderIt, *sellOrderIt);
+                            buyOrderIt->quantity -= sellOrderIt->quantity;
+                            sellOrderIt = sellList.erase(sellOrderIt);
+                        }
+                    }
+
+                    if (sellList.empty() || buyOrderIt->quantity == 0) {
+                        break;
+                    } else {
+                        ++buyOrderIt;
+                    }
+                }
+
+                if (sellList.empty()) {
+                    sellIt = sellOrders.erase(sellIt);
+                } else {
+                    ++sellIt;
+                }
+            }
+
+            if (buyList.empty()) {
+                buyIt = decltype(buyIt){};
+            }
+        }
+    }
+
+    void matchOrder(const Order& buyOrder, const Order& sellOrder) {
+        std::cout << "Matched: "
+                  << "Buy Order ID=" << buyOrder.id << ", "
+                  << "Sell Order ID=" << sellOrder.id << ", "
+                  << "Price=" << buyOrder.price << ", "
+                  << "Quantity=" << std::min(buyOrder.quantity, sellOrder.quantity) << std::endl;
+    }
+};
+```
 
 ---
 
