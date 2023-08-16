@@ -110,16 +110,24 @@ private:
                         const Order& buyOrder = *orderIds[buyOrderId];
                         const Order& sellOrder = *orderIds[sellOrderId];
 
-                        // Match the orders...
-                        matchOrder(buyOrder, sellOrder);
-
-                        // Remove the matched orders from the lists...
-                        buyOrderIt = buyList.erase(buyOrderIt);
-                        sellOrderIt = sellList.erase(sellOrderIt);
-
-                        // Break the loop if necessary conditions are satisfied
-                        if (/* your conditions for breaking the loop */) {
-                            break;
+                        int matchedVolume = std::min(buyOrder.quantity, sellOrder.quantity);
+                        if (matchedVolume > 0) {
+                            // Match the orders...
+                            matchOrder(buyOrder, sellOrder);
+        
+                            buyOrder.quantity -= matchedVolume;
+                            sellOrder.quantity -= matchedVolume;
+        
+                            // Remove the matched orders from the lists if the volume is fully matched...
+                            if (buyOrder.quantity == 0) {
+                                buyOrderIt = buyList.erase(buyOrderIt);
+                            }
+                            if (sellOrder.quantity == 0) {
+                                sellOrderIt = sellList.erase(sellOrderIt);
+                            }
+                        } else {
+                            // No volume match, move to the next sell order...
+                            ++sellOrderIt;
                         }
                     }
 
