@@ -95,52 +95,58 @@ private:
             double buyPrice = buyIt->first;
             std::list<int>& buyList = buyIt->second;
 
-            auto sellIt = sellOrders.begin();
-            while (sellIt != sellOrders.end() && sellIt->first <= buyPrice) {
-                double sellPrice = sellIt->first;
-                std::list<int>& sellList = sellIt->second;
+            auto sellIt = sellOrders.find(buyPrice);
+            if (sellIt == sellOrders.end()) {
+                ++buyIt;
+                continue;
+            }
+    
+            std::list<int>& sellList = sellIt->second;
 
-                auto buyOrderIt = buyList.begin();
-                while (buyOrderIt != buyList.end()) {
-                    auto sellOrderIt = sellList.begin();
-                    while (sellOrderIt != sellList.end()) {
-                        int buyOrderId = *buyOrderIt;
-                        int sellOrderId = *sellOrderIt;
+            auto buyOrderIt = buyList.begin();
+            while (buyOrderIt != buyList.end()) {
+                auto sellOrderIt = sellList.begin();
+                while (sellOrderIt != sellList.end()) {
+                    int buyOrderId = *buyOrderIt;
+                    int sellOrderId = *sellOrderIt;
 
-                        const Order& buyOrder = *orderIds[buyOrderId];
-                        const Order& sellOrder = *orderIds[sellOrderId];
+                    const Order& buyOrder = *orderIds[buyOrderId];
+                    const Order& sellOrder = *orderIds[sellOrderId];
 
-                        int matchedVolume = std::min(buyOrder.quantity, sellOrder.quantity);
-                        if (matchedVolume > 0) {
-                            // Match the orders...
-                            matchOrder(buyOrder, sellOrder);
-        
-                            buyOrder.quantity -= matchedVolume;
-                            sellOrder.quantity -= matchedVolume;
-        
-                            // Remove the matched orders from the lists if the volume is fully matched...
-                            if (buyOrder.quantity == 0) {
-                                buyOrderIt = buyList.erase(buyOrderIt);
-                            }
-                            if (sellOrder.quantity == 0) {
-                                sellOrderIt = sellList.erase(sellOrderIt);
-                            }
-                        } else {
-                            // No volume match, move to the next sell order...
-                            ++sellOrderIt;
+                    int matchedVolume = std::min(buyOrder.quantity, sellOrder.quantity);
+                    if (matchedVolume > 0) {
+                        // Match the orders...
+                        matchOrder(buyOrder, sellOrder);
+    
+                        buyOrder.quantity -= matchedVolume;
+                        sellOrder.quantity -= matchedVolume;
+    
+                        // Remove the matched orders from the lists if the volume is fully matched...
+                        if (buyOrder.quantity == 0) {
+                            buyOrderIt = buyList.erase(buyOrderIt);
                         }
-                    }
-
-                    if (sellOrderIt == sellList.end()) {
-                        ++buyOrderIt;
+                        if (sellOrder.quantity == 0) {
+                            sellOrderIt = sellList.erase(sellOrderIt);
+                        }
+                    } else {
+                        // No volume match, move to the next sell order...
+                        ++sellOrderIt;
                     }
                 }
 
-                if (buyOrderIt == buyList.end()) {
-                    sellIt = sellOrders.erase(sellIt);
-                } else {
-                    ++sellIt;
+                if (sellOrderIt == sellList.end()) {
+                    ++buyOrderIt;
                 }
+            }
+
+            if (buyList.empty()) {
+                buyIt = std::map<double, std::list<int>>::reverse_iterator(buyOrders.erase(std::next(buyIt).base()));
+            } else {
+                ++buyIt;
+            }
+    
+            if (sellList.empty()) {
+                sellOrders.erase(sellIt);
             }
         }
     }
