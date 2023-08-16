@@ -165,6 +165,32 @@ void matchOrder(const Order& buyOrder, const Order& sellOrder) {
                   << "Quantity=" << std::min(buyOrder.quantity, sellOrder.quantity) << std::endl;
     }
 }
+
+void printOrderBook() {
+    std::cout << "Buy Orders:" << std::endl;
+    for (auto it = buyOrders.rbegin(); it != buyOrders.rend(); ++it) {
+        double buyPrice = it->first;
+        const std::list<int>& buyList = it->second;
+
+        std::cout << "Price: " << buyPrice << std::endl;
+        for (const auto& orderId : buyList) {
+            const Order& order = *orderIds[orderId];
+            std::cout << "Order ID: " << order.id << ", Quantity: " << order.quantity << std::endl;
+        }
+    }
+
+    std::cout << "Sell Orders:" << std::endl;
+    for (const auto& entry : sellOrders) {
+        double sellPrice = entry.first;
+        const std::list<int>& sellList = entry.second;
+
+        std::cout << "Price: " << sellPrice << std::endl;
+        for (const auto& orderId : sellList) {
+            const Order& order = *orderIds[orderId];
+            std::cout << "Order ID: " << order.id << ", Quantity: " << order.quantity << std::endl;
+        }
+    }
+}
 };
 ```
 
