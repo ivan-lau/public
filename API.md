@@ -1,4 +1,4 @@
-```
+```cpp
 double round_to(double value, double precision = 1.0)
 {
     double i = 1.0 / precision;
@@ -22,7 +22,7 @@ It's important to carefully consider the design and requirements of your specifi
 
 ---
 
-```
+```cpp
 #include <iostream>
 #include <map>
 #include <vector>
