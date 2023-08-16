@@ -25,7 +25,9 @@ It's important to carefully consider the design and requirements of your specifi
 ```cpp
 #include <iostream>
 #include <map>
-#include <vector>
+#include <list>
+#include <unordered_map>
+#include <memory>
 
 enum class Side {
     Buy,
@@ -44,18 +46,44 @@ struct Order {
 
 class MatchingEngine {
 public:
-    void insertOrder(const Order& order) {
+    int insertOrder(const Order& order) {
+        int orderId = generateOrderId();
+        auto orderPtr = std::make_shared<Order>(order);
+        orderIds[orderId] = orderPtr;
+        
         if (order.side == Side::Buy) {
-            buyOrders[order.price].push_back(order);
+            buyOrders[order.price].push_back(orderId);
         } else {
-            sellOrders[order.price].push_back(order);
+            sellOrders[order.price].push_back(orderId);
         }
+        
         matchOrders();
+        
+        return orderId;
+    }
+    
+    void cancelOrder(int orderId) {
+        auto it = orderIds.find(orderId);
+        if (it != orderIds.end()) {
+            double price = it->second->price;
+            if (buyOrders.count(price) > 0) {
+                removeOrderFromList(orderId, buyOrders[price]);
+            } else if (sellOrders.count(price) > 0) {
+                removeOrderFromList(orderId, sellOrders[price]);
+            }
+            orderIds.erase(it);
+        }
     }
 
 private:
-    std::map<double, std::vector<Order>> buyOrders;
-    std::map<double, std::vector<Order>> sellOrders;
+    std::map<double, std::list<int>> buyOrders;
+    std::map<double, std::list<int>> sellOrders;
+    std::unordered_map<int, std::shared_ptr<Order>> orderIds;
+    int lastOrderId = 0;
+
+    int generateOrderId() {
+        return ++lastOrderId;
+    }
 
     void matchOrders() {
         for (auto buyIt = buyOrders.rbegin(); buyIt != buyOrders.rend(); ++buyIt) {
