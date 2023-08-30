@@ -294,7 +294,11 @@ Note that you'll need to adjust the buffer sizes and the processing logic accord
 
 ---
 
+chmod 777 tools/build/src/engine/build.sh
 
+./bootstrap.sh --with-libraries=all --prefix=./compiled/boost
+
+./b2 cxxflags="-fPIC" variant=release threading=multi link=static runtime-link=static install
 
 ---
 
