@@ -1,3 +1,4 @@
+```
 FROM centos:7
 
 RUN yum -y install gcc gcc-c++ glibc-static python python-devel libicu libicu-devel zlib zlib-devel bzip2 bzip2-devel wget which make openssl-devel curl curl-devel readline-devel
@@ -51,3 +52,7 @@ WORKDIR /
 RUN rm -rf /gcc-8.2.0 /gcc-8.2.0.tar.gz
 RUN rm -rf /cmake-3.26.4 /cmake-3.26.4.tar.gz
 RUN rm -rf /boost_1_73_0 /boost_1_73_0.tar.gz
+
+RUN groupadd -g 1000 ivan
+RUN useradd -u 1000 -g ivan -m ivan
+```
