@@ -56,3 +56,90 @@ You can use this function by providing the necessary inputs such as the current 
 Note that the function assumes European-style options and uses a risk-neutral probability (`p`) to calculate the option values. Also, make sure to provide the dividend payments as a list of tuples, where each tuple contains the dividend amount and the time step when it is paid.
 
 I hope this helps! Let me know if you have any further questions.
+
+---
+
+Of course, I'd be happy to help you fix the reserve function in your Vector code. To prevent the creation of unnecessary T objects, we can use placement new to initialize the new memory directly. Here's the updated code:
+
+```cpp
+template<typename T>
+class Vector {
+  public:
+    Vector() = default;
+    virtual ~Vector() {
+      clear();
+    }
+
+    size_t size() const {
+      return _size;
+    }
+
+    size_t capacity() const {
+      return _capacity;
+    }
+
+    void push_back(const T& value) {
+      _allocate();
+      _data[_size] = value;
+      ++_size;
+    }
+
+    template<typename... Args>
+    void emplace_back(Args&&... args) {
+      _allocate();
+      new (_data + _size) T(std::forward<Args>(args)...);
+      ++_size;
+    }
+
+    void reserve(size_t capacity) {
+      if (capacity > _capacity) {
+        T* newData = static_cast<T*>(::operator new(capacity * sizeof(T)));
+        for (size_t i = 0; i < _size; ++i) {
+          new (newData + i) T(std::move(_data[i]));
+          _data[i].~T();
+        }
+        ::operator delete(_data);
+        _data = newData;
+        _capacity = capacity;
+      }
+    }
+
+    T* begin() const {
+      return _data;
+    }
+
+    T* end() const {
+      return _data + _size;
+    }
+
+    void clear() {
+      for (size_t i = 0; i < _size; ++i)
+        _data[i].~T();
+
+      ::operator delete(_data);
+      _size = 0;
+      _capacity = 0;
+    }
+
+  private:
+    void _allocate() {
+      if (_size >= _capacity) {
+        size_t n = 0;
+        if (_capacity > 0)
+          n = _capacity * 2;
+        reserve(n);
+      }
+    }
+
+    T* _data{ nullptr };
+    size_t _size{ 0 };
+    size_t _capacity{ 0 };
+};
+```
+
+In the updated code, I've replaced the usage of `new` and `delete` with `::operator new` and `::operator delete` respectively. This allows us to allocate and deallocate memory without invoking the constructor and destructor of T unnecessarily. Instead, we use placement new to construct and destruct objects in the appropriate memory locations.
+
+Please let me know if you have any further questions or issues!
+
+
+
