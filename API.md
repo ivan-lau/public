@@ -109,8 +109,7 @@ make -j $(nproc)
 
 make DESTDIR=./output install
 
-grep -nr define\ ABSL_LTS_RELEASE_VERSION output/usr/local/include/absl/base/config.h
-
+grep -nr define\ ABSL_LTS_RELEASE_* output/usr/local/include/absl/base/config.h
 
 
 fmtlib 10.0.0
